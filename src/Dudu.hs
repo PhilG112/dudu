@@ -4,5 +4,5 @@ module Dudu
 where
 
 someFunc :: IO ()
-someFunc = putStrLn ("someFunc" :: String)
+someFunc = putStrLn "someFunc"
 
