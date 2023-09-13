@@ -36,6 +36,7 @@ library
     AppRWST
     AppTypes
     Utils
+    DirTree
   build-depends:
     , directory
     , extra
