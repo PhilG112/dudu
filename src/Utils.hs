@@ -1,12 +1,23 @@
 module Utils where
 
 import AppRWST (MyApp)
-import AppTypes (AppEnv (AppEnv, depth, fileStatus, path))
-import Control.Monad.RWS (MonadIO (liftIO), MonadReader (ask, local), RWST, asks)
+import AppTypes
+    ( AppConfig (extension, maxDepth),
+      AppEnv (AppEnv, cfg, depth, fileStatus, path),
+    )
+import Control.Monad.RWS
+    ( MonadIO (liftIO),
+      MonadReader (ask, local),
+      MonadWriter (tell),
+      RWST,
+      asks,
+      when,
+    )
 import Data.Foldable (traverse_)
 import System.Directory (listDirectory)
-import System.FilePath ((</>))
-import System.PosixCompat (FileStatus)
+import System.Directory.Extra (listFiles)
+import System.FilePath (isExtensionOf, (</>))
+import System.PosixCompat (FileStatus, isDirectory)
 
 currentPathStatus :: MyApp l s FileStatus
 currentPathStatus = do
@@ -27,3 +38,15 @@ traverseDirectoryWith app = do
                     { path = path env </> name
                     , depth = depth env + 1
                     }
+
+checkExtension :: AppConfig -> FilePath -> Bool
+checkExtension cfg fp = maybe True (\e -> e `isExtensionOf` fp) (extension cfg)
+
+fileCount :: MyApp (FilePath, Int) s ()
+fileCount = do
+    AppEnv {..} <- ask
+    fs <- currentPathStatus
+    when (isDirectory fs && depth <= maxDepth cfg) $ do
+        traverseDirectoryWith fileCount
+        files <- liftIO $ listFiles path
+        tell [(path, length $ filter (checkExtension cfg) files)]
