@@ -49,6 +49,7 @@ library
     , text
     , text-show
     , unix-compat
+    , transformers
 
 executable dudu
   import:         common-options
